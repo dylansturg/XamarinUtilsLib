@@ -42,7 +42,10 @@ namespace DylanSturg.XamarinUtilsLib
 		public void RaiseEvent(object sender, TArgs args)
 		{
 			object strongTarget = null;
-			weakTarget.TryGetTarget(out strongTarget);
+			if (!weakTarget.TryGetTarget(out strongTarget))
+			{
+				return;
+			}
 
 			var actionParams = eventAction.GetParameters();
 			var actionArgs = new object[actionParams.Length];
