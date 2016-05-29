@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using Moq;
 using NUnit.Framework;
+using System.Diagnostics;
 
 namespace DylanSturg.XamarinUtilsLib.Tests
 {
@@ -150,6 +151,38 @@ namespace DylanSturg.XamarinUtilsLib.Tests
 			signaler.PropertyChanged += propertyProxy.RaiseEvent;
 			signaler.RaisePropertyChanged(expectedPropertyArgs);
 			mockPropertySubscriber.Verify();
+		}
+
+		[Test]
+		public void WeakEventHandlerProxy_RaiseEvent_Performance_Within_100x_Non_Reflection_Action()
+		{
+			var testIterations = 10;
+
+			var subscriber = new CustomEventSubscriber<EventArgs>();
+			var proxy = new WeakEventHandlerProxy<EventArgs>(new EventHandler(subscriber.HandleEvent));
+
+			var stopwatch = new Stopwatch();
+			var proxyInvokeStart = stopwatch.ElapsedTicks;
+
+			stopwatch.Start();
+			for (var i = 0; i < testIterations; i++)
+			{
+				proxy.RaiseEvent(null, null);
+			}
+			stopwatch.Stop();
+			var proxyInvokeTicks = stopwatch.ElapsedTicks - proxyInvokeStart;
+
+			var actionInvokeStart = stopwatch.ElapsedTicks;
+			stopwatch.Start();
+			for (var i = 0; i < testIterations; i++)
+			{
+				subscriber.HandleEvent(null, null);
+			}
+			stopwatch.Stop();
+			var actionInvokeTicks = stopwatch.ElapsedTicks - actionInvokeStart;
+
+			Assert.Greater(actionInvokeTicks * 100, proxyInvokeTicks,
+						   "Invoke through the proxy should be within 100x the ticks to avoid reflection");
 		}
 	}
 
