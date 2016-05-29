@@ -27,6 +27,18 @@ namespace DylanSturg.XamarinUtilsLib
 			eventAction = eventHandler.GetMethodInfo();
 		}
 
+		public WeakEventHandlerProxy(EventHandler<TArgs> eventHandler)
+		{
+			weakTarget = new WeakReference<object>(eventHandler.Target);
+			eventAction = eventHandler.GetMethodInfo();
+		}
+
+		public WeakEventHandlerProxy(Action<object, TArgs> eventHandler)
+		{
+			weakTarget = new WeakReference<object>(eventHandler.Target);
+			eventAction = eventHandler.GetMethodInfo();
+		}
+
 		public void RaiseEvent(object sender, TArgs args)
 		{
 			object strongTarget = null;
