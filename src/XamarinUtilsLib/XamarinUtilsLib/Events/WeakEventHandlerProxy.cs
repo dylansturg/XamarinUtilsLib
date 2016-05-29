@@ -47,6 +47,7 @@ namespace DylanSturg.XamarinUtilsLib
 				return;
 			}
 
+
 			var actionParams = eventAction.GetParameters();
 			var actionArgs = new object[actionParams.Length];
 

@@ -125,6 +125,9 @@ namespace DylanSturg.XamarinUtilsLib.Tests
 			}
 
 			Assert.IsNull(proxy.Target, "Proxy Target should be garbage collected, proving it is a weak reference.");
+			Assert.DoesNotThrow(() =>
+								proxy.RaiseEvent(null, null),
+							   "RaiseEvent should ignore the event if the target has been collected");
 		}
 
 		[Test]
