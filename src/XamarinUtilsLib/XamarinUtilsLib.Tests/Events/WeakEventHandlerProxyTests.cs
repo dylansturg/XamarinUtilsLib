@@ -7,216 +7,220 @@ using System.Diagnostics;
 
 namespace DylanSturg.XamarinUtilsLib.Tests
 {
-	[TestFixture]
-	public class WeakEventHandlerProxyTests
-	{
-		[Test]
-		public void WeakEventHandlerProxy_Invokes_EventHandler_With_Null_Target()
-		{
-			var testHandler = new EventHandler((sender, e) => { });
-			Assert.IsNull(testHandler.Target, $"{nameof(EventHandler)} under test should have a null {nameof(EventHandler.Target)}");
-			var testProxy = new WeakEventHandlerProxy<EventArgs>(testHandler);
-			Assert.IsNull(testProxy.Target, $"{nameof(WeakEventHandlerProxy<EventArgs>)} should store null Target");
-			Assert.DoesNotThrow(() =>
-								testProxy.RaiseEvent(new object(), new EventArgs()));
-		}
+    [TestFixture]
+    public class WeakEventHandlerProxyTests
+    {
+        public static void NoCaptureHandler(object sender, EventArgs args)
+        {
+        }
 
-		[Test]
-		public void WeakEventHandlerProxy_RaiseEvent_Invokes_Given_EventHandler()
-		{
-			var handlerInvoked = false;
-			var testHandler = new EventHandler((sender, e) =>
-			{
-				handlerInvoked = true;
-			});
+        [Test]
+        public void WeakEventHandlerProxy_Invokes_EventHandler_With_Null_Target()
+        {
+            var testHandler = new EventHandler(NoCaptureHandler);
+            Assert.IsNull(testHandler.Target, $"{nameof(EventHandler)} under test should have a null {nameof(EventHandler.Target)}");
+            var testProxy = new WeakEventHandlerProxy<EventArgs>(testHandler);
+            Assert.IsNull(testProxy.Target, $"{nameof(WeakEventHandlerProxy<EventArgs>)} should store null Target");
+            Assert.DoesNotThrow(() =>
+                                testProxy.RaiseEvent(new object(), new EventArgs()));
+        }
 
-			var testProxy = new WeakEventHandlerProxy<EventArgs>(testHandler);
-			Assert.AreEqual(testHandler.Target, testProxy.Target);
-			testProxy.RaiseEvent(new object(), new EventArgs());
+        [Test]
+        public void WeakEventHandlerProxy_RaiseEvent_Invokes_Given_EventHandler()
+        {
+            var handlerInvoked = false;
+            var testHandler = new EventHandler((sender, e) =>
+            {
+                handlerInvoked = true;
+            });
 
-			Assert.IsTrue(handlerInvoked, $"{nameof(WeakEventHandlerProxy<EventArgs>.RaiseEvent)} should invoke EventHandler from constructor");
-		}
+            var testProxy = new WeakEventHandlerProxy<EventArgs>(testHandler);
+            Assert.AreEqual(testHandler.Target, testProxy.Target);
+            testProxy.RaiseEvent(new object(), new EventArgs());
 
-		[Test]
-		public void WeakEventHandlerProxy_RaiseEvent_Invokes_With_Given_Sender_And_EventArgs()
-		{
-			var expectedSender = new object();
-			var expectedArgs = new EventArgs();
+            Assert.IsTrue(handlerInvoked, $"{nameof(WeakEventHandlerProxy<EventArgs>.RaiseEvent)} should invoke EventHandler from constructor");
+        }
 
-			var handlerInvoked = false;
-			var testHandler = new EventHandler((sender, args) =>
-			{
-				handlerInvoked = true;
-				Assert.AreEqual(expectedArgs, args);
-				Assert.AreEqual(expectedSender, sender);
-			});
+        [Test]
+        public void WeakEventHandlerProxy_RaiseEvent_Invokes_With_Given_Sender_And_EventArgs()
+        {
+            var expectedSender = new object();
+            var expectedArgs = new EventArgs();
 
-			var testProxy = new WeakEventHandlerProxy<EventArgs>(testHandler);
-			testProxy.RaiseEvent(expectedSender, expectedArgs);
+            var handlerInvoked = false;
+            var testHandler = new EventHandler((sender, args) =>
+            {
+                handlerInvoked = true;
+                Assert.AreEqual(expectedArgs, args);
+                Assert.AreEqual(expectedSender, sender);
+            });
 
-			Assert.IsTrue(handlerInvoked, $"{nameof(WeakEventHandlerProxy<EventArgs>.RaiseEvent)} should invoke EventHandler with given sender and EventArgs");
-		}
+            var testProxy = new WeakEventHandlerProxy<EventArgs>(testHandler);
+            testProxy.RaiseEvent(expectedSender, expectedArgs);
 
-		[Test]
-		public void WeakEventHandler_Handles_Generic_EventHandler()
-		{
-			var testHandler = new EventHandler<CustomEventArgs<object>>(CustomEventArgsHandler);
-			Assert.AreEqual(this, testHandler.Target);
+            Assert.IsTrue(handlerInvoked, $"{nameof(WeakEventHandlerProxy<EventArgs>.RaiseEvent)} should invoke EventHandler with given sender and EventArgs");
+        }
 
-			var testProxy = new WeakEventHandlerProxy<CustomEventArgs<object>>(testHandler);
-			Assert.AreEqual(this, testProxy.Target);
-		}
+        [Test]
+        public void WeakEventHandler_Handles_Generic_EventHandler()
+        {
+            var testHandler = new EventHandler<CustomEventArgs<object>>(CustomEventArgsHandler);
+            Assert.AreEqual(this, testHandler.Target);
 
-		private void CustomEventArgsHandler(object sender, CustomEventArgs<object> args)
-		{
-		}
+            var testProxy = new WeakEventHandlerProxy<CustomEventArgs<object>>(testHandler);
+            Assert.AreEqual(this, testProxy.Target);
+        }
 
-		[Test]
-		public void WeakEventHandler_RaiseEvent_Invokes_With_Generic_EventArgs()
-		{
-			var expectedSender = new object();
-			var expectedArgs = new CustomEventArgs<object>
-			{
-				EventData = new object()
-			};
+        private void CustomEventArgsHandler(object sender, CustomEventArgs<object> args)
+        {
+        }
 
-			var handlerCalled = false;
-			var testProxy = new WeakEventHandlerProxy<CustomEventArgs<object>>((Action<object, CustomEventArgs<object>>)((sender, e) =>
-			{
-				handlerCalled = true;
-				Assert.AreEqual(expectedSender, sender);
-				Assert.AreEqual(expectedArgs, e);
-			}));
+        [Test]
+        public void WeakEventHandler_RaiseEvent_Invokes_With_Generic_EventArgs()
+        {
+            var expectedSender = new object();
+            var expectedArgs = new CustomEventArgs<object>
+            {
+                EventData = new object()
+            };
 
-			testProxy.RaiseEvent(expectedSender, expectedArgs);
+            var handlerCalled = false;
+            var testProxy = new WeakEventHandlerProxy<CustomEventArgs<object>>((Action<object, CustomEventArgs<object>>)((sender, e) =>
+            {
+                handlerCalled = true;
+                Assert.AreEqual(expectedSender, sender);
+                Assert.AreEqual(expectedArgs, e);
+            }));
 
-			Assert.IsTrue(handlerCalled);
-		}
+            testProxy.RaiseEvent(expectedSender, expectedArgs);
 
-		[Test]
-		public async Task WeakEventHandler_Maintains_Weak_Reference_For_Target()
-		{
-			WeakEventHandlerProxy<EventArgs> proxy;
+            Assert.IsTrue(handlerCalled);
+        }
 
-			{
-				var subscriber = new CustomEventSubscriber<object>();
-				proxy = new WeakEventHandlerProxy<EventArgs>((Action<object, EventArgs>)subscriber.HandleEvent);
-				Assert.AreEqual(subscriber, proxy.Target, "Proxy Target should be the event subscriber");
-				subscriber = null;
-			}
+        [Test]
+        public async Task WeakEventHandler_Maintains_Weak_Reference_For_Target()
+        {
+            WeakEventHandlerProxy<EventArgs> proxy;
 
-			var waitCount = 0;
-			var maximumWaitCount = 10;
+            {
+                var subscriber = new CustomEventSubscriber<object>();
+                proxy = new WeakEventHandlerProxy<EventArgs>((Action<object, EventArgs>)subscriber.HandleEvent);
+                Assert.AreEqual(subscriber, proxy.Target, "Proxy Target should be the event subscriber");
+                subscriber = null;
+            }
 
-			while (waitCount < maximumWaitCount)
-			{
-				waitCount++;
+            var waitCount = 0;
+            var maximumWaitCount = 10;
 
-				if (proxy.Target == null)
-				{
-					break;
-				}
+            while (waitCount < maximumWaitCount)
+            {
+                waitCount++;
 
-				await Task.Delay(10);
+                if (proxy.Target == null)
+                {
+                    break;
+                }
 
-				GC.Collect();
-				GC.WaitForPendingFinalizers();
-				GC.Collect();
-			}
+                await Task.Delay(10);
 
-			Assert.IsNull(proxy.Target, "Proxy Target should be garbage collected, proving it is a weak reference.");
-			Assert.DoesNotThrow(() =>
-								proxy.RaiseEvent(null, null),
-							   "RaiseEvent should ignore the event if the target has been collected");
-		}
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+            }
 
-		[Test]
-		public void WeakEventHandlerProxy_E2E_Signaler_Invokes_Subscriber()
-		{
-			var signaler = new CustomEventSignaler();
+            Assert.IsNull(proxy.Target, "Proxy Target should be garbage collected, proving it is a weak reference.");
+            Assert.DoesNotThrow(() =>
+                                proxy.RaiseEvent(null, null),
+                               "RaiseEvent should ignore the event if the target has been collected");
+        }
 
-			var expectedObjectArgs = new CustomEventArgs<object>();
+        [Test]
+        public void WeakEventHandlerProxy_E2E_Signaler_Invokes_Subscriber()
+        {
+            var signaler = new CustomEventSignaler();
 
-			var mockObjectSubscriber = new Mock<CustomEventSubscriber<CustomEventArgs<object>>>();
-			mockObjectSubscriber.Setup(mock => mock.HandleEvent(signaler, expectedObjectArgs))
-								.Verifiable($"{nameof(WeakEventHandlerProxy<CustomEventArgs<object>>)} should invoke subscriber when event is raised");
+            var expectedObjectArgs = new CustomEventArgs<object>();
 
-			var objectProxy = new WeakEventHandlerProxy<CustomEventArgs<object>>(new EventHandler<CustomEventArgs<object>>(mockObjectSubscriber.Object.HandleEvent));
-			signaler.ObjectChanged += objectProxy.RaiseEvent;
-			signaler.RaiseObjectChanged(expectedObjectArgs);
-			mockObjectSubscriber.Verify();
+            var mockObjectSubscriber = new Mock<CustomEventSubscriber<CustomEventArgs<object>>>();
+            mockObjectSubscriber.Setup(mock => mock.HandleEvent(signaler, expectedObjectArgs))
+                                .Verifiable($"{nameof(WeakEventHandlerProxy<CustomEventArgs<object>>)} should invoke subscriber when event is raised");
 
-			var expectedPropertyArgs = new PropertyChangedEventArgs("Property");
-			var mockPropertySubscriber = new Mock<CustomEventSubscriber<PropertyChangedEventArgs>>();
-			mockPropertySubscriber.Setup(mock => mock.HandleEvent(signaler, expectedPropertyArgs))
-								  .Verifiable($"{nameof(WeakEventHandlerProxy<PropertyChangedEventArgs>)} should invoke subscriber when event is raised");
-			var propertyProxy = new WeakEventHandlerProxy<PropertyChangedEventArgs>(new EventHandler<PropertyChangedEventArgs>(mockPropertySubscriber.Object.HandleEvent));
-			signaler.PropertyChanged += propertyProxy.RaiseEvent;
-			signaler.RaisePropertyChanged(expectedPropertyArgs);
-			mockPropertySubscriber.Verify();
-		}
+            var objectProxy = new WeakEventHandlerProxy<CustomEventArgs<object>>(new EventHandler<CustomEventArgs<object>>(mockObjectSubscriber.Object.HandleEvent));
+            signaler.ObjectChanged += objectProxy.RaiseEvent;
+            signaler.RaiseObjectChanged(expectedObjectArgs);
+            mockObjectSubscriber.Verify();
 
-		[Test]
-		public void WeakEventHandlerProxy_RaiseEvent_Performance_Within_100x_Non_Reflection_Action()
-		{
-			var testIterations = 10;
+            var expectedPropertyArgs = new PropertyChangedEventArgs("Property");
+            var mockPropertySubscriber = new Mock<CustomEventSubscriber<PropertyChangedEventArgs>>();
+            mockPropertySubscriber.Setup(mock => mock.HandleEvent(signaler, expectedPropertyArgs))
+                                  .Verifiable($"{nameof(WeakEventHandlerProxy<PropertyChangedEventArgs>)} should invoke subscriber when event is raised");
+            var propertyProxy = new WeakEventHandlerProxy<PropertyChangedEventArgs>(new EventHandler<PropertyChangedEventArgs>(mockPropertySubscriber.Object.HandleEvent));
+            signaler.PropertyChanged += propertyProxy.RaiseEvent;
+            signaler.RaisePropertyChanged(expectedPropertyArgs);
+            mockPropertySubscriber.Verify();
+        }
 
-			var subscriber = new CustomEventSubscriber<EventArgs>();
-			var proxy = new WeakEventHandlerProxy<EventArgs>(new EventHandler(subscriber.HandleEvent));
+        [Test]
+        public void WeakEventHandlerProxy_RaiseEvent_Performance_Within_500x_Non_Reflection_Action()
+        {
+            var testIterations = 10000;
 
-			var stopwatch = new Stopwatch();
-			var proxyInvokeStart = stopwatch.ElapsedTicks;
+            var subscriber = new CustomEventSubscriber<EventArgs>();
+            var proxy = new WeakEventHandlerProxy<EventArgs>(new EventHandler(subscriber.HandleEvent));
 
-			stopwatch.Start();
-			for (var i = 0; i < testIterations; i++)
-			{
-				proxy.RaiseEvent(null, null);
-			}
-			stopwatch.Stop();
-			var proxyInvokeTicks = stopwatch.ElapsedTicks - proxyInvokeStart;
+            var stopwatch = new Stopwatch();
+            var proxyInvokeStart = stopwatch.ElapsedTicks;
 
-			var actionInvokeStart = stopwatch.ElapsedTicks;
-			stopwatch.Start();
-			for (var i = 0; i < testIterations; i++)
-			{
-				subscriber.HandleEvent(null, null);
-			}
-			stopwatch.Stop();
-			var actionInvokeTicks = stopwatch.ElapsedTicks - actionInvokeStart;
+            stopwatch.Start();
+            for (var i = 0; i < testIterations; i++)
+            {
+                proxy.RaiseEvent(null, null);
+            }
+            stopwatch.Stop();
+            var proxyInvokeTicks = stopwatch.ElapsedTicks - proxyInvokeStart;
 
-			Assert.Greater(actionInvokeTicks * 100, proxyInvokeTicks,
-						   "Invoke through the proxy should be within 100x the ticks to avoid reflection");
-		}
-	}
+            var actionInvokeStart = stopwatch.ElapsedTicks;
+            stopwatch.Start();
+            for (var i = 0; i < testIterations; i++)
+            {
+                subscriber.HandleEvent(null, null);
+            }
+            stopwatch.Stop();
+            var actionInvokeTicks = stopwatch.ElapsedTicks - actionInvokeStart;
 
-	public class CustomEventArgs<T> : EventArgs
-	{
-		public T EventData { get; set; }
-	}
+            Assert.IsTrue((actionInvokeTicks * 500) >= proxyInvokeTicks,
+                           "Invoke through the proxy should be within 100x the ticks to avoid reflection");
+        }
+    }
 
-	public class CustomEventSubscriber<T>
-	{
-		public virtual void HandleEvent(object sender, T args)
-		{
-		}
-	}
+    public class CustomEventArgs<T> : EventArgs
+    {
+        public T EventData { get; set; }
+    }
 
-	public class CustomEventSignaler
-	{
-		public delegate void ObjectEventHandler(object sender, CustomEventArgs<object> args);
+    public class CustomEventSubscriber<T>
+    {
+        public virtual void HandleEvent(object sender, T args)
+        {
+        }
+    }
 
-		public event PropertyChangedEventHandler PropertyChanged;
-		public event ObjectEventHandler ObjectChanged;
+    public class CustomEventSignaler
+    {
+        public delegate void ObjectEventHandler(object sender, CustomEventArgs<object> args);
 
-		public void RaisePropertyChanged(PropertyChangedEventArgs args)
-		{
-			PropertyChanged?.Invoke(this, args);
-		}
+        public event PropertyChangedEventHandler PropertyChanged;
+        public event ObjectEventHandler ObjectChanged;
 
-		public void RaiseObjectChanged(CustomEventArgs<object> args)
-		{
-			ObjectChanged?.Invoke(this, args);
-		}
-	}
+        public void RaisePropertyChanged(PropertyChangedEventArgs args)
+        {
+            PropertyChanged?.Invoke(this, args);
+        }
+
+        public void RaiseObjectChanged(CustomEventArgs<object> args)
+        {
+            ObjectChanged?.Invoke(this, args);
+        }
+    }
 }
 
