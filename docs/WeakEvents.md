@@ -1,4 +1,7 @@
 # Weak Event Handlers
+
+[WeakEventHandlerProxy](src/XamarinUtilsLab/XamarinUtilsLab/Events/WeakEventHandlerProxy.cs)
+
 ### Prevent Memory Leaks by *weakly* Subscribing to Events
 
 #### Intro to Weak Event Subscription
