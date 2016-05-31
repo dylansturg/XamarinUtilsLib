@@ -94,4 +94,4 @@ private void HandleButtonTap(object sender, EventArgs args)
 ##### What Am I Losing?
 Unfortunately, I have not found a silver bullet. The `WeakEventHandlerProxy` allows us to forget about some garbage collection concerns, but is slower than just subscribing to an event. It uses reflection to invoke the given delegate, which is inherently slower than directly invoking the delegate. 
 
-I've found that the performance hit is usually minimal, on the order of a few milliseconds of difference.
+I've found that the performance hit is usually minimal, with less a millisecond difference per event firing. I would be cautious of the performance implications for events that fire a lot (probably more than 100 times / second, but I have no real data and it would depend heavily on the application).
