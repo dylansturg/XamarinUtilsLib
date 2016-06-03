@@ -95,3 +95,6 @@ private void HandleButtonTap(object sender, EventArgs args)
 Unfortunately, I have not found a silver bullet. The `WeakEventHandlerProxy` allows us to forget about some garbage collection concerns, but is slower than just subscribing to an event. It uses reflection to invoke the given delegate, which is inherently slower than directly invoking the delegate. 
 
 I've found that the performance hit is usually minimal, with less a millisecond difference per event firing. I would be cautious of the performance implications for events that fire a lot (probably more than 100 times / second, but I have no real data and it would depend heavily on the application).
+
+##### Long Lived Signaler
+In the event that the signaler is expected to outlive the subscriber, this approach has a considerable disadvantage. If the event subscription is not removed, then the `WeakEventHandlerProxy` will stay alive as long as the signaler object. Since these are relatively lightweight, it might not be a concern for a given application. If it is, it would be possible to remove the event handler in a finalizer or dispose method.
